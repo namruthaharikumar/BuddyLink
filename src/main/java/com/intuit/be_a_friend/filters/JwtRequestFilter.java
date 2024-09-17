@@ -1,7 +1,9 @@
+
 package com.intuit.be_a_friend.filters;
 
 
 import com.intuit.be_a_friend.DTO.UserDTO;
+import com.intuit.be_a_friend.exceptions.TokenInvalidError;
 import com.intuit.be_a_friend.services.UserService;
 import com.intuit.be_a_friend.utils.JwtUtil;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -19,8 +21,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-/*
 
+@Component
 public class JwtRequestFilter extends OncePerRequestFilter {
 
     @Autowired
@@ -32,6 +34,14 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
+
+        String requestURI = request.getRequestURI();
+
+      /*  if (requestURI.equals("/api/v1/user/signin") || requestURI.equals("/api/v1/user/signup") || requestURI.equals(("/h2-console"))) {
+            chain.doFilter(request, response); // Skip the JWT validation
+            return;
+        }*/
+        chain.doFilter(request, response);
 
         final String authorizationHeader = request.getHeader("Authorization");
 
@@ -52,16 +62,15 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
             UserDTO userDetails = this.userDetailsService.getUserInformation(username);
+            if(userDetails == null) {
+                throw new ServletException("The token is invalid");
+            }
 
             if (jwtUtil.validateToken(jwt, userDetails.getUsername())) {
-
-                UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, null);
-                usernamePasswordAuthenticationToken
-                        .setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+                chain.doFilter(request, response);
             }
         }
-        chain.doFilter(request, response);
+
     }
-}*/
+}
+

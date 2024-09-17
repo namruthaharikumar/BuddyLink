@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.*;
 import com.intuit.be_a_friend.responses.ErrorResponse;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
+import java.sql.SQLIntegrityConstraintViolationException;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -37,6 +39,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleNoHandlerFoundException(HttpRequestMethodNotSupportedException ex) {
         ErrorResponse errorResponse = new ErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(SQLIntegrityConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleSQLIntegrityConstraintViolationException(SQLIntegrityConstraintViolationException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(HttpStatus.CONFLICT, "Duplicate entry is present or an invalid update");
+        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
 
 

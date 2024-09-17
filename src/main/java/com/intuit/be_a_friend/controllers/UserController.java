@@ -37,8 +37,15 @@ public class UserController {
 
     @PostMapping("/signin")
     String getJWTToken(@RequestBody AuthenticationRequestDTO authenticationRequest) {
-        Authentication authentication = basicAuthManager.authenticate(new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(), authenticationRequest.getPassword()));
+         Authentication authentication = basicAuthManager.authenticate(new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(), authenticationRequest.getPassword()));
         String token =  jwtTokenUtil.generateToken(authentication.getName());
         return ("Bearer " + token);
+    }
+
+    @GetMapping("/follow/{followUser}")
+    public ResponseEntity<String> followUser(@PathVariable String followUser, @RequestHeader("Authorization") String token) {
+        String username = jwtTokenUtil.extractUsername(token.substring(7));
+        userService.followUser(username,followUser);
+        return ResponseEntity.status(HttpStatus.OK).body("User successfully followed");
     }
 }
