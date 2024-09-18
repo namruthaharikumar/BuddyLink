@@ -45,6 +45,37 @@ public class PostService {
         postRepository.save(post);
     }
 
+    public void deletePost(String username, Long postId) {
+        UserInfo userInfo = userRepository.findByUsername(username);
+        if(userInfo == null) {
+            throw new IllegalArgumentException("User not found");
+        }
+        Post post = postRepository.findById(postId).orElse(null);
+        if(post == null) {
+            throw new IllegalArgumentException("Post not found");
+        }
+        if(!post.getUserId().equals(userInfo.getUserId())) {
+            throw new IllegalArgumentException("User is not authorized to delete this post");
+        }
+        postRepository.delete(post);
+    }
+
+    public void updatePost(String username, Long postId, String post) {
+        UserInfo userInfo = userRepository.findByUsername(username);
+        if(userInfo == null) {
+            throw new IllegalArgumentException("User not found");
+        }
+        Post postEntity = postRepository.findById(postId).orElse(null);
+        if(postEntity == null) {
+            throw new IllegalArgumentException("Post not found");
+        }
+        if(!postEntity.getUserId().equals(userInfo.getUserId())) {
+            throw new IllegalArgumentException("User is not authorized to update this post");
+        }
+        postEntity.setContent(post);
+        postRepository.save(postEntity);
+    }
+
     //For generating records in db
  /*   @PostConstruct
     @Transactional

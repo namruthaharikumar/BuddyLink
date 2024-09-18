@@ -35,4 +35,18 @@ public class PostController {
         postService.createPost(username, post);
         return ResponseEntity.ok("Post created successfully");
     }
+
+    @DeleteMapping("/delete/{postId}")
+    ResponseEntity<String> deletePost(@RequestHeader("Authorization") String token, @PathVariable Long postId) {
+        String username = jwtUtil.extractUsername(token.substring(7));
+        postService.deletePost(username, postId);
+        return ResponseEntity.ok("Post deleted successfully");
+    }
+
+    @PutMapping("/update/{postId}")
+    ResponseEntity<String> updatePost(@RequestHeader("Authorization") String token, @PathVariable Long postId, @RequestBody String post) {
+        String username = jwtUtil.extractUsername(token.substring(7));
+        postService.updatePost(username, postId, post);
+        return ResponseEntity.ok("Post updated successfully");
+    }
 }
