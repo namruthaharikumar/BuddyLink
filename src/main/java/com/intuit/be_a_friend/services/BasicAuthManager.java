@@ -7,23 +7,26 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Component
 public class BasicAuthManager implements AuthenticationManager {
     @Autowired
     UserService userDetailsService;
+    @Autowired
+    PasswordEncoder passwordEncoder;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String username = authentication.getName();
         String password = authentication.getCredentials().toString();
-        final UserInfo userDetails = userDetailsService.userRepository.findByUsername(username);
+        final UserInfo userDetails = userDetailsService.getUserInfo(username);
         if(userDetails == null) {
             throw new AuthenticationException("Invalid username or password") {
             };
         }
-        if(new BCryptPasswordEncoder().matches(password,userDetails.getPassword())) {
+        if(passwordEncoder.matches(password,userDetails.getPassword())) {
             return new UsernamePasswordAuthenticationToken(username, password, null);
         } else {
             throw new AuthenticationException("Invalid username or password") {

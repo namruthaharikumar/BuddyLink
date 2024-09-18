@@ -6,26 +6,18 @@ import com.intuit.be_a_friend.entities.UserInfo;
 import com.intuit.be_a_friend.repositories.FollowerRepository;
 import com.intuit.be_a_friend.repositories.PostRepository;
 import com.intuit.be_a_friend.repositories.UserRepository;
-import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 @Service
 public class PostService {
 
-    private final PostRepository postRepository;
-
     @Autowired
-    public PostService(PostRepository postRepository) {
-        this.postRepository = postRepository;
-    }
+    private PostRepository postRepository;
 
     @Autowired
     UserRepository userRepository;
@@ -35,12 +27,18 @@ public class PostService {
 
     public Page<Post> getPostsByUserIdsInReverseChronologicalOrder(String userName, Pageable pageable) {
         UserInfo userInfo = userRepository.findByUsername(userName);
+        if(userInfo == null) {
+            throw new IllegalArgumentException("User not found");
+        }
         List<String> followersIds = followerRepository.findFollowingUsersBySubscriberId(userInfo.getUserId());
         return postRepository.findPostsByUserIdInOrderByCreatedAtDesc(followersIds, pageable);
     }
 
     public void createPost(String username, String content) {
         UserInfo userInfo = userRepository.findByUsername(username);
+        if(userInfo == null) {
+            throw new IllegalArgumentException("User not found");
+        }
         Post post = new Post();
         post.setContent(content);
         post.setUserId(userInfo.getUserId());

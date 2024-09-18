@@ -1,7 +1,6 @@
 package com.intuit.be_a_friend.services;
 
 import com.intuit.be_a_friend.DTO.UserDTO;
-import com.intuit.be_a_friend.controllers.AuthController;
 import com.intuit.be_a_friend.entities.Follower;
 import com.intuit.be_a_friend.entities.UserInfo;
 import com.intuit.be_a_friend.enums.OPERATION;
@@ -9,18 +8,11 @@ import com.intuit.be_a_friend.exceptions.DuplicateUserInformationException;
 import com.intuit.be_a_friend.factory.ValidatorFactory;
 import com.intuit.be_a_friend.repositories.FollowerRepository;
 import com.intuit.be_a_friend.repositories.UserRepository;
-import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 public class UserService {
@@ -30,10 +22,12 @@ public class UserService {
     ValidatorFactory validatorFactory;
     @Autowired
     FollowerRepository followerRepository;
+    @Autowired
+    PasswordEncoder passwordEncoder;
 
-    PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
 
     public UserInfo signup(UserDTO userDTO) throws Exception {
@@ -59,10 +53,20 @@ public class UserService {
     }
     public UserDTO  getUserInformation(String username) {
         UserInfo user = userRepository.findByUsername(username);
+        if(user == null) {
+            return null;
+        }
         return new UserDTO(user);
     }
 
+    public UserInfo getUserInfo(String username) {
+        return userRepository.findByUsername(username);
+    }
+
     public boolean followUser(String userName, String follwerUserName) {
+        if(userName.equals(follwerUserName)) {
+            throw new IllegalArgumentException("User cannot follow themselves");
+        }
         UserInfo userOpt = userRepository.findByUsername(userName);
         UserInfo followerOpt = userRepository.findByUsername(follwerUserName);
 
@@ -74,7 +78,7 @@ public class UserService {
 
             return true;
         }
-        return false;
+        throw new IllegalArgumentException("User not found");
     }
 
     //Used for generating unique users

@@ -3,8 +3,8 @@ package com.intuit.be_a_friend.filters;
 
 
 import com.intuit.be_a_friend.DTO.UserDTO;
-import com.intuit.be_a_friend.exceptions.TokenInvalidError;
 import com.intuit.be_a_friend.services.UserService;
+import com.intuit.be_a_friend.utils.Constants;
 import com.intuit.be_a_friend.utils.JwtUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
@@ -12,14 +12,15 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 @Component
@@ -35,13 +36,12 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
-        String requestURI = request.getRequestURI();
+        String requestURI = URLDecoder.decode(request.getRequestURI(), StandardCharsets.UTF_8);
 
-      /*  if (requestURI.equals("/api/v1/user/signin") || requestURI.equals("/api/v1/user/signup") || requestURI.equals(("/h2-console"))) {
+        if (isAllowedEndpoint(requestURI)) {
             chain.doFilter(request, response); // Skip the JWT validation
             return;
-        }*/
-        chain.doFilter(request, response);
+        }
 
         final String authorizationHeader = request.getHeader("Authorization");
 
@@ -68,9 +68,22 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
             if (jwtUtil.validateToken(jwt, userDetails.getUsername())) {
                 chain.doFilter(request, response);
+                return;
             }
         }
+        response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden access");
 
+    }
+
+    private boolean isAllowedEndpoint(String requestURI) {
+        for (String endpointPattern : Constants.allowedEndpoints) {
+            Pattern pattern = Pattern.compile(endpointPattern);
+            Matcher matcher = pattern.matcher(requestURI);
+            if (matcher.matches()) {
+                return true;  // The request URI matches one of the allowed patterns
+            }
+        }
+        return false;  // No match found
     }
 }
 
