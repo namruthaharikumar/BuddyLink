@@ -5,13 +5,14 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Entity
 @Data
 @NoArgsConstructor
-public class UserInfo {
+public class UserInfo implements Serializable {
 
     @Id
     private String userId;
@@ -31,7 +32,10 @@ public class UserInfo {
     @Enumerated(EnumType.STRING)
     private AccountType accountType = AccountType.PRIVATE;
 
+    @Transient
     private AtomicInteger followersCount = new AtomicInteger(0);
+
+    @Transient
     private AtomicInteger followingCount = new AtomicInteger(0);
 
     public UserInfo(String username, String password) {
