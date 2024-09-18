@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Entity
 @Data
@@ -30,8 +31,8 @@ public class UserInfo {
     @Enumerated(EnumType.STRING)
     private AccountType accountType = AccountType.PRIVATE;
 
-    private int followersCount = 0;
-    private int followingCount = 0;
+    private AtomicInteger followersCount = new AtomicInteger(0);
+    private AtomicInteger followingCount = new AtomicInteger(0);
 
     public UserInfo(String username, String password) {
         this.username = username;

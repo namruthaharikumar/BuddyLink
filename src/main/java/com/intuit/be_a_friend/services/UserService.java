@@ -14,6 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class UserService {
     @Autowired
@@ -72,9 +74,12 @@ public class UserService {
 
         if (userOpt!=null && followerOpt!=null) {
             Follower followerObj = new Follower();
+            userOpt.getFollowingCount().incrementAndGet();
+            followerOpt.getFollowersCount().incrementAndGet();
             followerObj.setSubscriberId(userOpt.getUserId());
             followerObj.setFollowingId(followerOpt.getUserId());
             followerRepository.save(followerObj);
+            userRepository.saveAll(List.of(userOpt, followerOpt));
 
             return true;
         }
