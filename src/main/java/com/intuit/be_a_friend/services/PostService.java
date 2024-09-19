@@ -6,17 +6,19 @@ import com.intuit.be_a_friend.exceptions.AccessDeniedException;
 import com.intuit.be_a_friend.repositories.FollowerRepository;
 import com.intuit.be_a_friend.repositories.PostRepository;
 import com.intuit.be_a_friend.repositories.UserRepository;
-import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -31,16 +33,16 @@ public class PostService {
     @Autowired
     FollowerRepository followerRepository;
 
+    @Autowired
+    CacheManager cacheManager;
+
     private static final Logger logger = LoggerFactory.getLogger(PostService.class);
 
-    public Page<Post> getPostsByUserIdsInReverseChronologicalOrder(String userName, Pageable pageable) {
-        logger.info("Entering getPostsByUserIdsInReverseChronologicalOrder with username: {}", userName);
-        UserInfo userInfo = userRepository.findByUsername(userName);
-        if (userInfo == null) {
-            logger.error("User not found: {}", userName);
-            throw new IllegalArgumentException("User not found");
-        }
-        List<String> followersIds = followerRepository.findFollowingUsersBySubscriberId(userInfo.getUserId());
+    @Cacheable(value = "postsByUser", key = "#userId + '_' + #pageable.pageNumber")
+    public Page<Post> getPostsByUserIdsInReverseChronologicalOrder(String userId, Pageable pageable) {
+        logger.info("Entering getPostsByUserIdsInReverseChronologicalOrder with userId: {}", userId);
+
+        List<String> followersIds = followerRepository.findFollowingUsersBySubscriberId(userId);
         Page<Post> posts = postRepository.findPostsByUserIdInOrderByCreatedAtDesc(followersIds, pageable);
         logger.info("Exiting getPostsByUserIdsInReverseChronologicalOrder with {} posts on page {}", posts.getSize(), pageable.getPageNumber());
         return posts;
@@ -57,6 +59,7 @@ public class PostService {
         post.setContent(content);
         post.setUserId(userInfo.getUserId());
         postRepository.save(post);
+        updateCache(userInfo.getUserId());
         logger.info("Post created for user: {}", username);
     }
 
@@ -77,6 +80,7 @@ public class PostService {
             throw new AccessDeniedException("User is not authorized to delete this post");
         }
         postRepository.delete(post);
+        updateCache(userInfo.getUserId());
         logger.info("Post deleted for user: {}", username);
     }
 
@@ -98,7 +102,31 @@ public class PostService {
         }
         postEntity.setContent(postContent);
         postRepository.save(postEntity);
+        updateCache(userInfo.getUserId());
         logger.info("Post updated for user: {}", username);
+    }
+
+    public void updateCache(String userId) {
+        followerRepository.findSubscribers(userId).forEach(followerId -> {
+            logger.info("Evicting cache for user: {}", followerId);
+            updateCacheForFollower(followerId);
+        });
+    }
+
+    public void updateCacheForFollower(String followerId) {
+        Cache cache = cacheManager.getCache("postsByUser");
+        if(cache.get(followerId + "_0")!= null) {
+            cache.put(followerId + "_0", getPostsByUserIdsInReverseChronologicalOrder(followerId, PageRequest.of(0, 10, Sort.by(Sort.Order.desc("createdAt")))));
+            logger.info("Evicting cache for user: {}", followerId);
+        }
+
+    }
+
+    public void evictAllCacheForFollower(String followerId) {
+        Cache cache = cacheManager.getCache("postsByUser");
+        cache.evict(followerId + "_0");
+        cache.evict(followerId + "_1");
+        logger.info("Evicting cache for user: {}", followerId);
     }
 
 

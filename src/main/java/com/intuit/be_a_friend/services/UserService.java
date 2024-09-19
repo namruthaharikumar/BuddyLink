@@ -8,16 +8,13 @@ import com.intuit.be_a_friend.exceptions.DuplicateUserInformationException;
 import com.intuit.be_a_friend.factory.ValidatorFactory;
 import com.intuit.be_a_friend.repositories.FollowerRepository;
 import com.intuit.be_a_friend.repositories.UserRepository;
-import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -29,6 +26,8 @@ public class UserService {
     FollowerRepository followerRepository;
     @Autowired
     PasswordEncoder passwordEncoder;
+    @Autowired
+    PostService postService;
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
@@ -70,6 +69,17 @@ public class UserService {
         return new UserDTO(user);
     }
 
+    public UserInfo getUserInfoByUserName(String username) {
+        logger.info("Entering getUserInformation with username: {}", username);
+        UserInfo user = userRepository.findByUsername(username);
+        if (user == null) {
+            logger.warn("User not found: {}", username);
+        } else {
+            logger.info("User info retrieved for userName: {}", username);
+        }
+        return user;
+    }
+
     public UserInfo getUserInfo(String username) {
         logger.info("Entering getUserInfo with username: {}", username);
         UserInfo user = userRepository.findByUsername(username);
@@ -90,6 +100,8 @@ public class UserService {
         UserInfo userOpt = userRepository.findByUsername(userName);
         UserInfo followerOpt = userRepository.findByUsername(followerUserName);
 
+
+
         if (userOpt != null && followerOpt != null) {
             Follower followerObj = new Follower();
             userOpt.setFollowingCount(userOpt.getFollowingCount() + 1);
@@ -98,11 +110,14 @@ public class UserService {
             followerObj.setFollowingId(followerOpt.getUserId());
             followerRepository.save(followerObj);
             userRepository.saveAll(List.of(userOpt, followerOpt));
+            postService.updateCache(userOpt.getUserId());
             logger.info("User {} successfully followed user {}", userName, followerUserName);
             return true;
         }
+
         logger.error("User not found: {} or {}", userName, followerUserName);
         throw new IllegalArgumentException("User not found");
+
     }
 
     public void unfollowUser(String username, String unfollowUser) {
@@ -114,6 +129,8 @@ public class UserService {
             logger.error("User not found: {} or {}", username, unfollowUser);
             throw new IllegalArgumentException("User not found");
         }
+
+        postService.evictAllCacheForFollower(user.getUserId());
 
         Follower follower = followerRepository.findByFollowingIdAndSubscriberId(unfollowUserInfo.getUserId(), user.getUserId());
         if (follower != null) {
@@ -135,7 +152,7 @@ public class UserService {
             logger.warn("User not found: {}", username);
             throw new IllegalArgumentException("User not found");
         }
-        List<String> followers = followerRepository.findBySubscriberId(user.getUserId());
+        List<String> followers = followerRepository.findFollowingUsersBySubscriberId(user.getUserId());
         List<String> followerUsernames = userRepository.getUserNameByIds(followers);
         logger.info("Followers retrieved for username: {}", username);
         return followerUsernames;

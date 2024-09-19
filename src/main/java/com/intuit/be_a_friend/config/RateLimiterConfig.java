@@ -19,7 +19,7 @@ public class RateLimiterConfig {
     public Bucket resolveBucket(String key) {
         // Create a new bucket with a rate limit of 10 requests per minute if one does not already exist
         return buckets.computeIfAbsent(key, k -> Bucket4j.builder()
-                .addLimit(Bandwidth.simple(1000, Duration.ofMinutes(1)))
+                .addLimit(Bandwidth.simple(100, Duration.ofMinutes(1)))
                 .build());
     }
 

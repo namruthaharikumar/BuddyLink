@@ -51,7 +51,7 @@ public class PostControllerIntegrationTest {
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         ResponseEntity<String> response = restTemplate.exchange(
-                baseUrl + "/api/v1/posts/list?page=0&size=10&sort=desc",
+                baseUrl + "/api/v1/posts/list?pageNumber=0",
                 HttpMethod.GET,
                 entity,
                 String.class

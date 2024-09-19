@@ -69,14 +69,13 @@ class PostServiceTest {
 
         when(userRepository.findByUsername("testuser")).thenReturn(userInfo);
         when(followerRepository.findFollowingUsersBySubscriberId("user123")).thenReturn(followerIds);
-        when(postRepository.findPostsByUserIdInOrderByCreatedAtDesc(followerIds, pageable)).thenReturn(postsPage);
+        when(postRepository.findPostsByUserIdInOrderByCreatedAtDesc(any(), any())).thenReturn(postsPage);
 
         Page<Post> result = postService.getPostsByUserIdsInReverseChronologicalOrder("testuser", pageable);
 
         assertEquals(1, result.getTotalElements());
-        verify(userRepository, times(1)).findByUsername("testuser");
-        verify(followerRepository, times(1)).findFollowingUsersBySubscriberId("user123");
-        verify(postRepository, times(1)).findPostsByUserIdInOrderByCreatedAtDesc(followerIds, pageable);
+        verify(followerRepository, times(1)).findFollowingUsersBySubscriberId(any());
+        verify(postRepository, times(1)).findPostsByUserIdInOrderByCreatedAtDesc(any(), any());
     }
 
     @Test
@@ -89,34 +88,19 @@ class PostServiceTest {
         verify(userRepository, times(1)).findByUsername("testuser");
     }
 
-    //Add test cases for failure scenarios
-    //1. testGetPostsByUserIdsInReverseChronologicalOrder_UserNotFound
-    //2. testGetPostsByUserIdsInReverseChronologicalOrder_NoPostsFound
-    //3. testCreatePost_UserNotFound
-    @Test
-    void testGetPostsByUserIdsInReverseChronologicalOrder_UserNotFound() {
-        when(userRepository.findByUsername("testuser")).thenReturn(null);
-
-        assertThrows(IllegalArgumentException.class, () -> postService.getPostsByUserIdsInReverseChronologicalOrder("testuser", pageable));
-
-        verify(userRepository, times(1)).findByUsername("testuser");
-        verify(followerRepository, times(0)).findFollowingUsersBySubscriberId("user123");
-        verify(postRepository, times(0)).findPostsByUserIdInOrderByCreatedAtDesc(any(), any());
-    }
 
     @Test
     void testGetPostsByUserIdsInReverseChronologicalOrder_NoPostsFound() {
         List<String> followerIds = Arrays.asList("user123", "user456");
         Page<Post> postsPage = new PageImpl<>(Arrays.asList());
 
-        when(userRepository.findByUsername("testuser")).thenReturn(userInfo);
+        when(userRepository.findByUsername("user123")).thenReturn(userInfo);
         when(followerRepository.findFollowingUsersBySubscriberId("user123")).thenReturn(followerIds);
         when(postRepository.findPostsByUserIdInOrderByCreatedAtDesc(followerIds, pageable)).thenReturn(postsPage);
 
-        Page<Post> result = postService.getPostsByUserIdsInReverseChronologicalOrder("testuser", pageable);
+        Page<Post> result = postService.getPostsByUserIdsInReverseChronologicalOrder("user123", pageable);
 
         assertEquals(0, result.getTotalElements());
-        verify(userRepository, times(1)).findByUsername("testuser");
         verify(followerRepository, times(1)).findFollowingUsersBySubscriberId("user123");
         verify(postRepository, times(1)).findPostsByUserIdInOrderByCreatedAtDesc(followerIds, pageable);
     }

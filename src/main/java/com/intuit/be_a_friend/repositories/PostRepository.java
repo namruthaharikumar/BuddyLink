@@ -1,6 +1,7 @@
 package com.intuit.be_a_friend.repositories;
 
 import com.intuit.be_a_friend.entities.Post;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

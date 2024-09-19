@@ -7,6 +7,7 @@ import com.intuit.be_a_friend.exceptions.DuplicateUserInformationException;
 import com.intuit.be_a_friend.factory.ValidatorFactory;
 import com.intuit.be_a_friend.repositories.FollowerRepository;
 import com.intuit.be_a_friend.repositories.UserRepository;
+import com.intuit.be_a_friend.services.PostService;
 import com.intuit.be_a_friend.services.UserService;
 import com.intuit.be_a_friend.validators.UserSignupDataValidator;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,6 +36,9 @@ class UserServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private PostService postService;
 
     @Mock
     UserSignupDataValidator userSignupDataValidator;
