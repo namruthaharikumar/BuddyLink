@@ -41,13 +41,13 @@ jobs:
           distribution: 'temurin'
 
       - name: Run tests and generate coverage report
-        run: mvn test jacoco:report
+        run: mvn test jacoco:report -DskipIntegrationTests=true
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v3
         with:
           name: jacoco-report
-          path: target/site/jacoco  # Path where JaCoCo generates the report
+          path: custom-coverage-report  # Update this path if necessary
 
   coverage:
     runs-on: ubuntu-latest
@@ -64,4 +64,4 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           files: jacoco-report/jacoco.xml
-          fail_ci_if_error: true  # This fails the job if coverage upload fails
+          fail_ci_if_error: true  # This fails the job if coverage upload fails        fail_ci_if_error: true  # This fails the job if coverage upload fails

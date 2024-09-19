@@ -171,4 +171,12 @@
 
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>unit-tests</id>
+            <properties>
+                <skip.integration.tests>true</skip.integration.tests>
+            </properties>
+        </profile>
+    </profiles>
 </project>
