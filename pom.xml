@@ -133,6 +133,42 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.0.0-M5</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/*IT.java</include> <!-- Integration test pattern -->
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M5</version>
+                <configuration>
+                    <!-- Include only unit tests -->
+                    <includes>
+                        <include>**/*Test.java</include>
+                    </includes>
+                    <!-- Exclude integration tests -->
+                    <excludes>
+                        <exclude>**/*IT.java</exclude> <!-- Exclude integration tests ending with IT -->
+                        <exclude>**/integration/**</exclude> <!-- Exclude integration test directory -->
+                    </excludes>
+                </configuration>
+            </plugin>
+
         </plugins>
     </build>
 </project>
