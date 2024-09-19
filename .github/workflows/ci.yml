@@ -24,7 +24,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Build with Maven
-        run: mvn clean install
+        run: mvn clean install -DskipTests -Dspring-boot.run.profiles=none
 
   test:
     runs-on: ubuntu-latest
