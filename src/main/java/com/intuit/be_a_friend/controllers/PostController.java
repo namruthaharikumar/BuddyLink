@@ -1,6 +1,7 @@
 package com.intuit.be_a_friend.controllers;
 
 import com.intuit.be_a_friend.entities.Post;
+import com.intuit.be_a_friend.exceptions.AccessDeniedException;
 import com.intuit.be_a_friend.services.PostService;
 import com.intuit.be_a_friend.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,8 +9,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/posts")
@@ -37,14 +36,14 @@ public class PostController {
     }
 
     @DeleteMapping("/delete/{postId}")
-    ResponseEntity<String> deletePost(@RequestHeader("Authorization") String token, @PathVariable Long postId) {
+    ResponseEntity<String> deletePost(@RequestHeader("Authorization") String token, @PathVariable Long postId) throws AccessDeniedException {
         String username = jwtUtil.extractUsername(token.substring(7));
         postService.deletePost(username, postId);
         return ResponseEntity.ok("Post deleted successfully");
     }
 
     @PutMapping("/update/{postId}")
-    ResponseEntity<String> updatePost(@RequestHeader("Authorization") String token, @PathVariable Long postId, @RequestBody String post) {
+    ResponseEntity<String> updatePost(@RequestHeader("Authorization") String token, @PathVariable Long postId, @RequestBody String post) throws AccessDeniedException {
         String username = jwtUtil.extractUsername(token.substring(7));
         postService.updatePost(username, postId, post);
         return ResponseEntity.ok("Post updated successfully");

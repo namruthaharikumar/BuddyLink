@@ -4,6 +4,7 @@ import com.intuit.be_a_friend.DTO.UserDTO;
 import com.intuit.be_a_friend.services.UserService;
 import com.intuit.be_a_friend.utils.JwtUtil;
 import io.jsonwebtoken.ExpiredJwtException;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,6 +17,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 class JwtRequestFilterTest {
@@ -92,7 +94,9 @@ class JwtRequestFilterTest {
         when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
         when(jwtUtil.extractUsername(token)).thenThrow(new ExpiredJwtException(null, null, "Token expired"));
 
-        jwtRequestFilter.doFilterInternal(request, response, chain);
+        ExpiredJwtException exception = assertThrows(ExpiredJwtException.class, () -> {
+            jwtRequestFilter.doFilterInternal(request, response, chain);
+        });
 
         verify(chain, times(0)).doFilter(request, response);
     }

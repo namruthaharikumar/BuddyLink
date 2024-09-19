@@ -9,6 +9,6 @@ RUN mvn clean package -DskipTests
 # Stage 2: Run the application
 FROM openjdk:17-jdk-slim
 WORKDIR /app
-COPY --from=build /app/target/BeAFriend-1.0-SNAPSHOT.jar /app/BeAFriend-1.0-SNAPSHOT.jar
+COPY --from=build /app/target/beafriend-1.0-SNAPSHOT.jar /app/beafriend-1.0-SNAPSHOT.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-Xmx128m", "-jar", "/app/BeAFriend-1.0-SNAPSHOT.jar"]
+ENTRYPOINT ["java", "-Xmx128m", "-jar", "/app/beafriend-1.0-SNAPSHOT.jar"]

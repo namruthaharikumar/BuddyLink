@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Entity
 @Data
 @NoArgsConstructor
+@Table(name = "user_info", indexes = @Index(name = "idx_username", columnList = "username"))
 public class UserInfo implements Serializable {
 
     @Id
@@ -32,11 +33,10 @@ public class UserInfo implements Serializable {
     @Enumerated(EnumType.STRING)
     private AccountType accountType = AccountType.PRIVATE;
 
-    @Transient
-    private AtomicInteger followersCount = new AtomicInteger(0);
 
-    @Transient
-    private AtomicInteger followingCount = new AtomicInteger(0);
+    private int followersCount = 0;
+
+    private int followingCount = 0;
 
     public UserInfo(String username, String password) {
         this.username = username;

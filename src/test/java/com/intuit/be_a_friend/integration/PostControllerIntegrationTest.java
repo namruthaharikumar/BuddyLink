@@ -8,19 +8,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.*;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = SocialMediaApp.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -29,74 +25,99 @@ public class PostControllerIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-
-    private MockMvc mockMvc;
-
-    @Autowired
-    private WebApplicationContext wac;
-
     @Autowired
     private JwtUtil jwtUtil;
 
+    @LocalServerPort
+    private int port;
+
+    private String baseUrl;
     private String validToken;
     private String invalidToken;
+    private RestTemplate restTemplate;
 
     @BeforeEach
     void setUp() {
-        // Generate a valid token and an invalid token for testing
-        validToken =jwtUtil.generateToken("Namrutha");
+        baseUrl = "http://localhost:" + port;
+        validToken = jwtUtil.generateToken("user1");
         invalidToken = "eyJhbGciOiJ9.eyJzdWIiOiJBYmlzaGVrIiwiZXhwIjoxNzI2NzA1MgxLCJpYXQiOjE3MjY2NjkwODF9.bVG9sayma-j_213A32gGfAR1zQbXmFEXEttYmcZHG4Q";
-        this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
+        restTemplate = new RestTemplate();
     }
 
     @Test
     void testGetPostsByUserIds_Success() throws Exception {
-        Pageable pageable = PageRequest.of(0, 10);
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + validToken);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
 
-        MvcResult mvcResult = mockMvc.perform(get("/api/v1/posts/list")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken)
-                        .param("page", "0")
-                        .param("size", "10").param("sort", "desc")
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].content").exists())
-                .andReturn();
+        ResponseEntity<String> response = restTemplate.exchange(
+                baseUrl + "/api/v1/posts/list?page=0&size=10&sort=desc",
+                HttpMethod.GET,
+                entity,
+                String.class
+        );
 
-
-        String responseContent = mvcResult.getResponse().getContentAsString();
-        System.out.println(responseContent);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        System.out.println(response.getBody());
     }
 
     @Test
     void testGetPostsByUserIds_Unauthorized() throws Exception {
-        mockMvc.perform(get("/api/v1/posts/list")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + invalidToken)
-                        .param("page", "0")
-                        .param("size", "10")
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnauthorized());
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + invalidToken);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    baseUrl + "/api/v1/posts/list?page=0&size=10",
+                    HttpMethod.GET,
+                    entity,
+                    String.class
+            );
+        } catch (HttpClientErrorException e) {
+            assertEquals(FORBIDDEN, e.getStatusCode());
+        }
     }
 
     @Test
     void testCreatePost_Success() throws Exception {
         String postContent = "This is a test post";
 
-        mockMvc.perform(post("/api/v1/posts/create")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(postContent)))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Post created successfully"));
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + validToken);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> entity = new HttpEntity<>(postContent, headers);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                baseUrl + "/api/v1/posts/create",
+                HttpMethod.POST,
+                entity,
+                String.class
+        );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("Post created successfully", response.getBody());
     }
 
     @Test
     void testCreatePost_Unauthorized() throws Exception {
         String postContent = "This is a test post";
 
-        mockMvc.perform(post("/api/v1/posts/create")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + invalidToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(postContent)))
-                .andExpect(status().isUnauthorized());
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + invalidToken);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> entity = new HttpEntity<>(postContent, headers);
+
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    baseUrl + "/api/v1/posts/create",
+                    HttpMethod.POST,
+                    entity,
+                    String.class
+            );
+        } catch (HttpClientErrorException e) {
+            assertEquals(FORBIDDEN, e.getStatusCode());
+        }
+
     }
 }

@@ -3,21 +3,22 @@ package com.intuit.be_a_friend.integration;
 import com.intuit.be_a_friend.DTO.UserDTO;
 import com.intuit.be_a_friend.enums.AccountType;
 import com.intuit.be_a_friend.repositories.UserRepository;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.*;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.http.*;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.http.HttpStatus.*;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class UserControllerIntegrationTest extends IntegrationTestBase {
 
     private static RestTemplate restTemplate = new RestTemplate();
@@ -28,25 +29,23 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
     @Autowired
     private UserRepository userRepository;
 
+    static UserDTO userDTO;
+
     @BeforeAll()
     static void setUp() {
         restTemplate.setRequestFactory(new HttpComponentsClientHttpRequestFactory());
+        userDTO = getUserDTO();
     }
     @Test
+    @Order(1)
     void testSignup_Success() {
-        UserDTO userDTO = new UserDTO();
-        userDTO.setUsername("testuser"+"_" + LocalDateTime.now());
-        userDTO.setPassword("password");
-        userDTO.setEmail("testuser@example.com"+"_" + LocalDateTime.now());
-        userDTO.setAccountType(AccountType.PRIVATE);
-
         HttpHeaders headers = new HttpHeaders();
         HttpEntity<UserDTO> request = new HttpEntity<>(userDTO, headers);
         String url = "http://localhost:" + serverPort + "/api/v1/user/signup";
         ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
-
+        System.out.println("User created for "+userDTO.getUsername());
         assertEquals(CREATED, response.getStatusCode());
-        assertTrue(userRepository.findByUsername("testuser")!=null);
+        assertTrue(userRepository.findByUsername(userDTO.getUsername())!=null);
 
     }
 
@@ -72,10 +71,6 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
     @Test
     void testLogin_Success() {
         // Assuming a user is already created in the database
-        UserDTO userDTO = new UserDTO();
-        userDTO.setUsername("testuser");
-        userDTO.setPassword("password");
-
         HttpHeaders headers = new HttpHeaders();
         HttpEntity<UserDTO> request = new HttpEntity<>(userDTO, headers);
         String url = "http://localhost:" + serverPort + "/api/v1/user/signin";
@@ -84,6 +79,7 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
         assertEquals(OK, response.getStatusCode());
         assertNotNull(response.getBody());
     }
+
 
 
     @Test
@@ -105,4 +101,20 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
             assertEquals("{\"status\":\"UNAUTHORIZED\",\"message\":\"Invalid username or password\"}", e.getResponseBodyAsString());
         }
     }
+
+    static UserDTO getUserDTO() {
+        UserDTO userDTO = new UserDTO();
+        userDTO.setUsername("testuser"+"_" + LocalDateTime.now());
+        userDTO.setPassword("password");
+        userDTO.setAccountType(AccountType.PRIVATE);
+        userDTO.setEmail("testuser"+"_" + LocalDateTime.now()+"@example.com");
+        return userDTO;
+    }
+
+    @AfterAll
+    @Transactional
+    public void cleanUp() {
+        userRepository.delete(userRepository.findByUsername(userDTO.getUsername()));
+    }
+
 }

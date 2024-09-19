@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 @Entity
 @Data
 @NoArgsConstructor
+@Table(name = "post", indexes = @Index(name = "idx_userId", columnList = "userId"))
 public class Post {
 
     @Id
@@ -26,6 +27,8 @@ public class Post {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column
+    private Integer likes = 0;
 
     public Post(String content, String userId) {
         this.content = content;
