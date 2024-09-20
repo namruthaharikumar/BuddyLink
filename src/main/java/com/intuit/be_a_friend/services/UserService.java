@@ -51,7 +51,6 @@ public class UserService {
         user.setUsername(userDTO.getUsername());
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
         user.setEmail(userDTO.getEmail());
-        user.setAccountType(userDTO.getAccountType());
         user.setPhoneNumber(userDTO.getPhoneNumber());
         userRepository.save(user);
         logger.info("User successfully created: {}", userDTO.getUsername());

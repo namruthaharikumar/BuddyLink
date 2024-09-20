@@ -31,7 +31,7 @@ public class UserInfo implements Serializable {
     private String phoneNumber;
 
     @Enumerated(EnumType.STRING)
-    private AccountType accountType = AccountType.PRIVATE;
+    private AccountType accountType = AccountType.PUBLIC;
 
 
     private int followersCount = 0;

@@ -24,7 +24,6 @@ class UserSignupDataValidatorTest {
         userDTO.setUsername("testuser");
         userDTO.setPassword("password");
         userDTO.setEmail("testuser@example.com");
-        userDTO.setAccountType(AccountType.PRIVATE);
 
         assertTrue(validator.validate(userDTO));
     }
@@ -34,7 +33,6 @@ class UserSignupDataValidatorTest {
         UserDTO userDTO = new UserDTO();
         userDTO.setPassword("password");
         userDTO.setEmail("testuser@example.com");
-        userDTO.setAccountType(AccountType.PRIVATE);
 
         Exception exception = assertThrows(InsufficientInformationException.class, () -> {
             validator.validate(userDTO);
@@ -48,7 +46,6 @@ class UserSignupDataValidatorTest {
         UserDTO userDTO = new UserDTO();
         userDTO.setUsername("testuser");
         userDTO.setEmail("testuser@example.com");
-        userDTO.setAccountType(AccountType.PRIVATE);
 
         Exception exception = assertThrows(InsufficientInformationException.class, () -> {
             validator.validate(userDTO);
@@ -62,7 +59,6 @@ class UserSignupDataValidatorTest {
         UserDTO userDTO = new UserDTO();
         userDTO.setUsername("testuser");
         userDTO.setPassword("password");
-        userDTO.setAccountType(AccountType.PRIVATE);
 
         Exception exception = assertThrows(InsufficientInformationException.class, () -> {
             validator.validate(userDTO);
@@ -71,17 +67,4 @@ class UserSignupDataValidatorTest {
         assertEquals("Email cannot be empty", exception.getMessage());
     }
 
-    @Test
-    void testValidate_MissingAccountType() {
-        UserDTO userDTO = new UserDTO();
-        userDTO.setUsername("testuser");
-        userDTO.setPassword("password");
-        userDTO.setEmail("testuser@example.com");
-
-        Exception exception = assertThrows(InsufficientInformationException.class, () -> {
-            validator.validate(userDTO);
-        });
-
-        assertEquals("Account type cannot be empty", exception.getMessage());
-    }
 }

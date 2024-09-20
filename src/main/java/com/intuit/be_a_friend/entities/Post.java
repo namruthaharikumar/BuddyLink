@@ -27,6 +27,11 @@ public class Post {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+
+    @Version
+    private int version;
+
+
     @Column
     private Integer likes = 0;
 
