@@ -45,7 +45,7 @@ public class FollowController {
 
     }
 
-    @DeleteMapping("/unfollow/{unfollowUser}")
+    @DeleteMapping("/{unfollowUser}")
     @Operation(summary = "Unfollow another user")
     public ResponseEntity<String> unfollowUser(
             @PathVariable String unfollowUser,

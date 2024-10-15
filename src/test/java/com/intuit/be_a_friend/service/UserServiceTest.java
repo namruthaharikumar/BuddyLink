@@ -17,6 +17,10 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -154,5 +158,53 @@ class UserServiceTest {
 
         when(userRepository.findByUsername(userName)).thenReturn(null);
         assertThrows(IllegalArgumentException.class, () -> userService.followUser(userName, followerUserName));
+    }
+
+/*
+    @Test
+    void testUnfollowUser() {
+        String followerUsername = "follower";
+        String followeeUsername = "followee";
+
+        UserInfo follower = new UserInfo();
+        follower.setUsername(followerUsername);
+        UserInfo followee = new UserInfo();
+        followee.setUsername(followeeUsername);
+
+        when(userRepository.findByUsername(followerUsername)).thenReturn(follower);
+        when(userRepository.findByUsername(followeeUsername)).thenReturn(followee);
+
+        userService.unfollowUser(followerUsername, followeeUsername);
+
+        verify(userRepository, times(1)).save(follower);
+    }*/
+
+
+
+    @Test
+    void testGetUserInfoByUserName() {
+        String username = "user";
+        UserInfo user = new UserInfo();
+        user.setUsername(username);
+
+        when(userRepository.findByUsername(username)).thenReturn(user);
+
+        UserInfo userDTO = userService.getUserInfoByUserName(username);
+
+        assertNotNull(userDTO);
+        assertEquals(username, userDTO.getUsername());
+    }
+
+    @Test
+    void testGetUserInfo() {
+        UserInfo user = new UserInfo();
+        user.setUsername("1");
+
+        when(userRepository.findByUsername(user.getUsername())).thenReturn(user);
+
+        UserInfo userDTO = userService.getUserInfo(user.getUsername());
+
+        assertNotNull(userDTO);
+        assertEquals(user.getUsername(), userDTO.getUsername());
     }
 }

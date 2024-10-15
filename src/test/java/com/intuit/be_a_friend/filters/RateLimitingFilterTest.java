@@ -1,6 +1,7 @@
 package com.intuit.be_a_friend.filters;
 
 import com.intuit.be_a_friend.config.RateLimiterConfig;
+import com.intuit.be_a_friend.utils.JwtUtil;
 import io.github.bucket4j.Bucket;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -26,6 +27,9 @@ class RateLimitingFilterTest {
     private RateLimiterConfig rateLimiterConfig;
 
     @Mock
+    private JwtUtil jwtUtil;
+
+    @Mock
     private HttpServletRequest request;
 
     @Mock
@@ -48,7 +52,11 @@ class RateLimitingFilterTest {
     @Test
     void testDoFilterInternal_AllowedRequest() throws ServletException, IOException {
         when(request.getRemoteAddr()).thenReturn("127.0.0.1");
-        when(rateLimiterConfig.resolveBucket("127.0.0.1")).thenReturn(bucket);
+        when(request.getHeader("Authorization")).thenReturn("Bearer validToken");
+        when(request.getRequestURI()).thenReturn("/api/v1/user/signin");
+        when(jwtUtil.extractUsername("validToken")).thenReturn("validUser");
+        when(rateLimiterConfig.resolveIpBucket("127.0.0.1")).thenReturn(bucket);
+        when(rateLimiterConfig.resolveUserBucket("validUser")).thenReturn(bucket);
         when(bucket.tryConsume(1)).thenReturn(true);
 
         rateLimitingFilter.doFilterInternal(request, response, filterChain);
@@ -58,9 +66,9 @@ class RateLimitingFilterTest {
     }
 
     @Test
-    void testDoFilterInternal_RateLimitExceeded() throws ServletException, IOException {
+    void testDoFilterInternal_RateLimitExceededForIP() throws ServletException, IOException {
         when(request.getRemoteAddr()).thenReturn("127.0.0.1");
-        when(rateLimiterConfig.resolveBucket("127.0.0.1")).thenReturn(bucket);
+        when(rateLimiterConfig.resolveIpBucket("127.0.0.1")).thenReturn(bucket);
         when(bucket.tryConsume(1)).thenReturn(false);
 
         StringWriter stringWriter = new StringWriter();
@@ -71,6 +79,27 @@ class RateLimitingFilterTest {
 
         verify(filterChain, times(0)).doFilter(request, response);
         verify(response, times(1)).setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-        assertEquals("Rate limit exceeded. Please try again later.", stringWriter.toString().trim());
+        assertEquals("Rate limit exceeded for IP. Please try again later.", stringWriter.toString().trim());
+    }
+
+    @Test
+    void testDoFilterInternal_RateLimitExceededForUser() throws ServletException, IOException {
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        when(request.getHeader("Authorization")).thenReturn("Bearer validToken");
+        when(request.getRequestURI()).thenReturn("/api/v1/comments/100");
+        when(jwtUtil.extractUsername("validToken")).thenReturn("validUser");
+        when(rateLimiterConfig.resolveIpBucket("127.0.0.1")).thenReturn(bucket);
+        when(rateLimiterConfig.resolveUserBucket("validUser")).thenReturn(bucket);
+        when(bucket.tryConsume(1)).thenReturn(true).thenReturn(false);
+
+        StringWriter stringWriter = new StringWriter();
+        PrintWriter printWriter = new PrintWriter(stringWriter);
+        when(response.getWriter()).thenReturn(printWriter);
+
+        rateLimitingFilter.doFilterInternal(request, response, filterChain);
+
+        verify(filterChain, times(0)).doFilter(request, response);
+        verify(response, times(1)).setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+        assertEquals("Rate limit exceeded for user. Please try again later.", stringWriter.toString().trim());
     }
 }

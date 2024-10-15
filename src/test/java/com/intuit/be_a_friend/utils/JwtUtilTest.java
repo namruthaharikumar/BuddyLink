@@ -7,25 +7,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.spec.SecretKeySpec;
-import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
 @Component
-public class JwtUtil {
+public class JwtUtilTest {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtUtil.class);
-    private static final String SECRET_KEY_STRING = "your-very-strong-secret-key-string-that-is-32-bytes-long";
-
-    // Convert the static string to a SecretKey object
-    private static final Key SECRET_KEY = new SecretKeySpec(
-            SECRET_KEY_STRING.getBytes(StandardCharsets.UTF_8),
-            SignatureAlgorithm.HS256.getJcaName()
-    );
+    private String SECRET_KEY = "mysecretkey";
 
     // Extract Username from Token
     public String extractUsername(String token) {
@@ -50,7 +41,7 @@ public class JwtUtil {
         return Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token).getBody();
     }
 
-    protected Boolean isTokenExpired(String token) {
+    private Boolean isTokenExpired(String token) {
         logger.info("Checking if token is expired");
         return extractExpiration(token).before(new Date());
     }

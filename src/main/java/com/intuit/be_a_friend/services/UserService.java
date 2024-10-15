@@ -8,12 +8,14 @@ import com.intuit.be_a_friend.exceptions.DuplicateUserInformationException;
 import com.intuit.be_a_friend.factory.ValidatorFactory;
 import com.intuit.be_a_friend.repositories.FollowerRepository;
 import com.intuit.be_a_friend.repositories.UserRepository;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -51,7 +53,6 @@ public class UserService {
         user.setUsername(userDTO.getUsername());
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
         user.setEmail(userDTO.getEmail());
-        user.setAccountType(userDTO.getAccountType());
         user.setPhoneNumber(userDTO.getPhoneNumber());
         userRepository.save(user);
         logger.info("User successfully created: {}", userDTO.getUsername());
@@ -110,7 +111,7 @@ public class UserService {
             followerObj.setFollowingId(followerOpt.getUserId());
             followerRepository.save(followerObj);
             userRepository.saveAll(List.of(userOpt, followerOpt));
-            postService.updateCache(userOpt.getUserId());
+            postService.updateCache(followerOpt.getUserId());
             logger.info("User {} successfully followed user {}", userName, followerUserName);
             return true;
         }
@@ -159,7 +160,7 @@ public class UserService {
     }
 
     // Used for generating unique users
-/*    @PostConstruct
+  /*  @PostConstruct
     public void init() {
         logger.info("Initializing unique users");
         List<UserInfo> userInfoList = new ArrayList<>();

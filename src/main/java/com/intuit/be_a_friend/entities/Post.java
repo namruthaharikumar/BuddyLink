@@ -27,8 +27,12 @@ public class Post {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+
     @Column
     private Integer likes = 0;
+
+    @Column
+    private Integer comments = 0;
 
     public Post(String content, String userId) {
         this.content = content;

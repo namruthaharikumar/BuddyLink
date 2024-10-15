@@ -93,11 +93,13 @@ class JwtRequestFilterTest {
         when(request.getRequestURI()).thenReturn("/some-endpoint");
         when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
         when(jwtUtil.extractUsername(token)).thenThrow(new ExpiredJwtException(null, null, "Token expired"));
+        doNothing().when(response).sendError(anyInt(), anyString());
 
-        ExpiredJwtException exception = assertThrows(ExpiredJwtException.class, () -> {
-            jwtRequestFilter.doFilterInternal(request, response, chain);
-        });
-
+//        ExpiredJwtException exception = assertThrows(ExpiredJwtException.class, () -> {
+//            jwtRequestFilter.doFilterInternal(request, response, chain);
+//        });
+        jwtRequestFilter.doFilterInternal(request, response, chain);
+        verify(response, times(1)).sendError(anyInt(), anyString());
         verify(chain, times(0)).doFilter(request, response);
     }
 

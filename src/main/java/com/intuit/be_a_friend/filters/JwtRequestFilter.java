@@ -51,35 +51,43 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         String username = null;
         String jwt = null;
 
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            jwt = authorizationHeader.substring(7);
-            logger.info("JWT token found in the authorization header");
-            username = jwtUtil.extractUsername(jwt);
-            logger.info("Extracted username from JWT: {}", username);
-        } else {
-            logger.warn("Authorization header is missing or does not start with Bearer");
-        }
-
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            logger.info("Validating token for user: {}", username);
-
-            UserDTO userDetails = this.userDetailsService.getUserInformation(username);
-            if (userDetails == null) {
-                logger.error("Invalid token for user: {}", username);
-                throw new ServletException("The token is invalid");
-            }
-
-            if (jwtUtil.validateToken(jwt, userDetails.getUsername())) {
-                logger.info("JWT token is valid for user: {}", username);
-                chain.doFilter(request, response);
-                return;
+        try {
+            if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+                jwt = authorizationHeader.substring(7);
+                logger.info("JWT token found in the authorization header");
+                username = jwtUtil.extractUsername(jwt);
+                logger.info("Extracted username from JWT: {}", username);
             } else {
-                logger.warn("JWT validation failed for user: {}", username);
+                logger.warn("Authorization header is missing or does not start with Bearer");
             }
+
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                logger.info("Validating token for user: {}", username);
+
+                UserDTO userDetails = this.userDetailsService.getUserInformation(username);
+                if (userDetails == null) {
+                    logger.error("Invalid token for user: {}", username);
+                    throw new ServletException("The token is invalid");
+                }
+
+                if (jwtUtil.validateToken(jwt, userDetails.getUsername())) {
+                    logger.info("JWT token is valid for user: {}", username);
+                    chain.doFilter(request, response);
+                    return;
+                } else {
+                    logger.warn("JWT validation failed for user: {}", username);
+                }
+            }
+        } catch (Exception ex) {
+            request.setAttribute("message", ex.getMessage());
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED,"Invalid JWT Token");
+            return;
         }
+
+
 
         logger.error("Access forbidden for URI: {}", requestURI);
-        response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden access");
+        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
     }
 
     private boolean isAllowedEndpoint(String requestURI) {
