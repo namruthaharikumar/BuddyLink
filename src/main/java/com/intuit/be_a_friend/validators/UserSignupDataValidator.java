@@ -27,8 +27,8 @@ public class UserSignupDataValidator implements Validator<UserDTO> {
             logger.error("Validation failed: Email cannot be empty");
             throw new InsufficientInformationException("Email cannot be empty");
         }
-        if (input.getPhoneNumber() != null && input.getPhoneNumber().length() != 10) {
-            logger.error("Validation failed: Phone number should be of length 10");
+        if (input.getPhoneNumber() != null && input.getPhoneNumber().matches("\\d{10}")) {
+            logger.error("Validation failed: Phone number should be of length 10 and contain only numbers");
             throw new IllegalArgumentException("Phone number should be of length 10");
         }
 

@@ -1,6 +1,7 @@
 package com.intuit.be_a_friend.filters;
 
 import com.intuit.be_a_friend.config.RateLimiterConfig;
+import com.intuit.be_a_friend.utils.Constants;
 import com.intuit.be_a_friend.utils.JwtUtil;
 import io.github.bucket4j.Bucket;
 import jakarta.servlet.FilterChain;
@@ -15,6 +16,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Component
 public class RateLimitingFilter extends OncePerRequestFilter {
@@ -32,7 +35,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         String authorizationHeader = request.getHeader("Authorization");
         String username = null;
 
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ") && !isAllowedEndpoint(request.getRequestURI())) {
             String token = authorizationHeader.substring(7);
             username = jwtUtil.extractUsername(token);
         }
@@ -58,5 +61,17 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
         logger.info("Request allowed for IP: {} and user: {}", ipAddress, username);
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isAllowedEndpoint(String requestURI) {
+        for (String endpointPattern : Constants.allowedEndpoints) {
+            Pattern pattern = Pattern.compile(endpointPattern);
+            Matcher matcher = pattern.matcher(requestURI);
+            if (matcher.matches()) {
+                logger.info("Matched allowed endpoint pattern: {} for URI: {}", endpointPattern, requestURI);
+                return true;  // The request URI matches one of the allowed patterns
+            }
+        }
+        return false;  // No match found
     }
 }

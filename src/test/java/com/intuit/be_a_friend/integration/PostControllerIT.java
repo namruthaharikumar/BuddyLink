@@ -20,7 +20,7 @@ import static org.springframework.http.HttpStatus.FORBIDDEN;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = SocialMediaApp.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class PostControllerIntegrationTest {
+public class PostControllerIT {
 
     @Autowired
     private ObjectMapper objectMapper;

@@ -28,12 +28,11 @@ public class Post {
     private LocalDateTime updatedAt;
 
 
-    @Version
-    private int version;
-
-
     @Column
     private Integer likes = 0;
+
+    @Column
+    private Integer comments = 0;
 
     public Post(String content, String userId) {
         this.content = content;

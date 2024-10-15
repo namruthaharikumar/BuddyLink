@@ -1,9 +1,8 @@
 package com.intuit.be_a_friend.advices;
 
-import com.intuit.be_a_friend.exceptions.DuplicateUserInformationException;
-import com.intuit.be_a_friend.exceptions.InsufficientInformationException;
-import com.intuit.be_a_friend.exceptions.AccessDeniedException;
+import com.intuit.be_a_friend.exceptions.*;
 import com.intuit.be_a_friend.responses.ErrorResponse;
+import com.mysql.cj.jdbc.exceptions.MysqlDataTruncation;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import jakarta.persistence.EntityNotFoundException;
@@ -104,4 +103,41 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse(HttpStatus.FORBIDDEN, ex.getMessage());
         return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
     }
+
+    @ExceptionHandler(MysqlDataTruncation.class)
+    public ResponseEntity<ErrorResponse> handleMysqlDataTruncation(MysqlDataTruncation ex) {
+        logger.error("MysqlDataTruncation: {}", ex.getMessage(), ex);
+        ErrorResponse errorResponse = new ErrorResponse(HttpStatus.BAD_REQUEST, "Data too long for column");
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(CommentNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCommandNotFoundException(CommentNotFoundException ex) {
+        logger.error("CommentNotFoundException: {}", ex.getMessage(), ex);
+        ErrorResponse errorResponse = new ErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(PostNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePostNotFoundException(CommentNotFoundException ex) {
+        logger.error("PostNotFoundException: {}", ex.getMessage(), ex);
+        ErrorResponse errorResponse = new ErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleAllException(Exception ex) {
+        logger.error("PostNotFoundException: {}", ex.getMessage(), ex);
+        ErrorResponse errorResponse = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(GlobalErrorException.class)
+    public ResponseEntity<ErrorResponse> handleGlobalErrorException(GlobalErrorException ex) {
+        logger.error("GlobalErrorException: {}", ex.getMessage(), ex);
+        ErrorResponse errorResponse = new ErrorResponse(HttpStatus.valueOf(ex.getStatusCode()), ex.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.valueOf(ex.getStatusCode()));
+    }
+
+
 }

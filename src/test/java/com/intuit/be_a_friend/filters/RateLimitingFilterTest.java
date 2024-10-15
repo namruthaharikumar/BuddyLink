@@ -53,6 +53,7 @@ class RateLimitingFilterTest {
     void testDoFilterInternal_AllowedRequest() throws ServletException, IOException {
         when(request.getRemoteAddr()).thenReturn("127.0.0.1");
         when(request.getHeader("Authorization")).thenReturn("Bearer validToken");
+        when(request.getRequestURI()).thenReturn("/api/v1/user/signin");
         when(jwtUtil.extractUsername("validToken")).thenReturn("validUser");
         when(rateLimiterConfig.resolveIpBucket("127.0.0.1")).thenReturn(bucket);
         when(rateLimiterConfig.resolveUserBucket("validUser")).thenReturn(bucket);
@@ -85,6 +86,7 @@ class RateLimitingFilterTest {
     void testDoFilterInternal_RateLimitExceededForUser() throws ServletException, IOException {
         when(request.getRemoteAddr()).thenReturn("127.0.0.1");
         when(request.getHeader("Authorization")).thenReturn("Bearer validToken");
+        when(request.getRequestURI()).thenReturn("/api/v1/comments/100");
         when(jwtUtil.extractUsername("validToken")).thenReturn("validUser");
         when(rateLimiterConfig.resolveIpBucket("127.0.0.1")).thenReturn(bucket);
         when(rateLimiterConfig.resolveUserBucket("validUser")).thenReturn(bucket);

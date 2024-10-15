@@ -7,16 +7,16 @@ import com.intuit.be_a_friend.repositories.FollowerRepository;
 import com.intuit.be_a_friend.repositories.PostRepository;
 import com.intuit.be_a_friend.repositories.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -38,14 +38,22 @@ public class PostService {
 
     private static final Logger logger = LoggerFactory.getLogger(PostService.class);
 
-    @Cacheable(value = "postsByUser", key = "#userId + '_' + #pageable.pageNumber")
-    public Page<Post> getPostsByUserIdsInReverseChronologicalOrder(String userId, Pageable pageable) {
+    @Cacheable(value = "postsByUser", key = "#userId + '_' + #pageNumber", condition = "#pageNumber == 1 || #pageNumber == 2")
+    public Page<Post> getPostsByUserIdsInReverseChronologicalOrder(String userId, Integer pageNumber) {
+        Pageable pageable = Pageable.ofSize(10).withPage(pageNumber);
         logger.info("Entering getPostsByUserIdsInReverseChronologicalOrder with userId: {}", userId);
 
         List<String> followersIds = followerRepository.findFollowingUsersBySubscriberId(userId);
+        followersIds.add(userId);
         Page<Post> posts = postRepository.findPostsByUserIdInOrderByCreatedAtDesc(followersIds, pageable);
         logger.info("Exiting getPostsByUserIdsInReverseChronologicalOrder with {} posts on page {}", posts.getSize(), pageable.getPageNumber());
         return posts;
+    }
+
+    @CacheEvict(value = "postsByUser", key = "#userId + '_' + #pageNumber")
+    public void evictNewFeedCache(Long postId, int page) {
+        logger.info("Post cache is evicted for post id: {} and page: {}", postId, page);
+        return;
     }
 
     public void createPost(String username, String content) {
@@ -59,7 +67,6 @@ public class PostService {
         post.setContent(content);
         post.setUserId(userInfo.getUserId());
         postRepository.save(post);
-        updateCache(userInfo.getUserId());
         logger.info("Post created for user: {}", username);
     }
 
@@ -102,21 +109,35 @@ public class PostService {
         }
         postEntity.setContent(postContent);
         postRepository.save(postEntity);
-        updateCache(userInfo.getUserId());
+        //updateCache(userInfo.getUserId());
         logger.info("Post updated for user: {}", username);
+    }
+
+    @Transactional
+    public void commentPost(String username, Long postId) {
+        Post postEntity = postRepository.findById(postId).orElse(null);
+        if (postEntity == null) {
+            logger.error("Post not found: {}", postId);
+            throw new EntityNotFoundException("Post not found/ User is not eligible to access the post");
+        }
+        postEntity.setComments(postEntity.getComments() + 1);
+        postRepository.save(postEntity);
+        logger.info("Post commented for user: {}", username);
     }
 
     public void updateCache(String userId) {
         followerRepository.findSubscribers(userId).forEach(followerId -> {
             logger.info("Evicting cache for user: {}", followerId);
-            updateCacheForFollower(followerId);
+            evictCacheForFollowers(followerId);
         });
+        evictCacheForFollowers(userId);
     }
 
-    public void updateCacheForFollower(String followerId) {
+    public void evictCacheForFollowers(String followerId) {
         Cache cache = cacheManager.getCache("postsByUser");
         if(cache.get(followerId + "_0")!= null) {
-            cache.put(followerId + "_0", getPostsByUserIdsInReverseChronologicalOrder(followerId, PageRequest.of(0, 10, Sort.by(Sort.Order.desc("createdAt")))));
+            cache.evictIfPresent(followerId + "_0");
+            cache.evictIfPresent(followerId + "_1");
             logger.info("Evicting cache for user: {}", followerId);
         }
 
@@ -155,7 +176,7 @@ public class PostService {
             postRepository.saveAll(posts);
         }
         logger.info("Finished initializing posts for users");
-    }
+    }*/
 
     private String generateContent(int index, String userName) {
         String baseContent = "This is a sample post content for user " + userName + " for " + index + " index. ";
@@ -164,5 +185,5 @@ public class PostService {
             contentBuilder.append(baseContent);
         }
         return contentBuilder.substring(0, 1000);
-    }*/
+    }
 }

@@ -34,7 +34,7 @@ public class PostController {
         this.postService = postService;
     }
 
-    @GetMapping("/list")
+    @GetMapping("")
     public Page<Post> getPostsByUserIds(@RequestHeader("Authorization") String token, Integer pageNumber) {
         String username = jwtUtil.extractUsername(token.substring(7));
          UserInfo userInfo =  userService.getUserInfoByUserName(username);
@@ -42,24 +42,24 @@ public class PostController {
             logger.error("User not found: {}", username);
             throw new IllegalArgumentException("User not found");
         }
-        Pageable pageable = Pageable.ofSize(10).withPage(pageNumber);
-         return postService.getPostsByUserIdsInReverseChronologicalOrder(userInfo.getUserId(), pageable);
+
+         return postService.getPostsByUserIdsInReverseChronologicalOrder(userInfo.getUserId(), pageNumber);
     }
-    @PostMapping("/create")
+    @PostMapping("")
     ResponseEntity<String> createPost(@RequestHeader("Authorization") String token, @RequestBody String post) {
         String username = jwtUtil.extractUsername(token.substring(7));
         postService.createPost(username, post);
         return ResponseEntity.ok("Post created successfully");
     }
 
-    @DeleteMapping("/delete/{postId}")
+    @DeleteMapping("/{postId}")
     ResponseEntity<String> deletePost(@RequestHeader("Authorization") String token, @PathVariable Long postId) throws AccessDeniedException {
         String username = jwtUtil.extractUsername(token.substring(7));
         postService.deletePost(username, postId);
         return ResponseEntity.ok("Post deleted successfully");
     }
 
-    @PutMapping("/update/{postId}")
+    @PutMapping("/{postId}")
     ResponseEntity<String> updatePost(@RequestHeader("Authorization") String token, @PathVariable Long postId, @RequestBody String post) throws AccessDeniedException {
         String username = jwtUtil.extractUsername(token.substring(7));
         postService.updatePost(username, postId, post);

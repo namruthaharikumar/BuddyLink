@@ -19,7 +19,7 @@ import static org.springframework.http.HttpStatus.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class UserControllerIntegrationTest extends IntegrationTestBase {
+class UserControllerIT extends IntegrationTestBaseIT {
 
     private static RestTemplate restTemplate = new RestTemplate();
 
@@ -54,7 +54,6 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
         UserDTO userDTO = new UserDTO();
         userDTO.setPassword("password");
         userDTO.setEmail("testuser@example.com");
-        userDTO.setAccountType(AccountType.PRIVATE);
 
         HttpHeaders headers = new HttpHeaders();
         HttpEntity<UserDTO> request = new HttpEntity<>(userDTO, headers);
@@ -106,7 +105,6 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
         UserDTO userDTO = new UserDTO();
         userDTO.setUsername("testuser"+"_" + LocalDateTime.now());
         userDTO.setPassword("password");
-        userDTO.setAccountType(AccountType.PRIVATE);
         userDTO.setEmail("testuser"+"_" + LocalDateTime.now()+"@example.com");
         return userDTO;
     }

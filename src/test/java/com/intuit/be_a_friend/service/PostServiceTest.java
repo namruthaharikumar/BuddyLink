@@ -1,5 +1,6 @@
 package com.intuit.be_a_friend.service;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.intuit.be_a_friend.entities.Post;
 import com.intuit.be_a_friend.entities.UserInfo;
 import com.intuit.be_a_friend.exceptions.AccessDeniedException;
@@ -13,15 +14,15 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.caffeine.CaffeineCache;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -39,8 +40,12 @@ class PostServiceTest {
     @Mock
     private FollowerRepository followerRepository;
 
+    @Mock
+    CacheManager cacheManager;
+
     @InjectMocks
     private PostService postService;
+
 
     private UserInfo userInfo;
     private Post post;
@@ -71,7 +76,7 @@ class PostServiceTest {
         when(followerRepository.findFollowingUsersBySubscriberId("user123")).thenReturn(followerIds);
         when(postRepository.findPostsByUserIdInOrderByCreatedAtDesc(any(), any())).thenReturn(postsPage);
 
-        Page<Post> result = postService.getPostsByUserIdsInReverseChronologicalOrder("testuser", pageable);
+        Page<Post> result = postService.getPostsByUserIdsInReverseChronologicalOrder("testuser", Integer.valueOf(1));
 
         assertEquals(1, result.getTotalElements());
         verify(followerRepository, times(1)).findFollowingUsersBySubscriberId(any());
@@ -91,18 +96,18 @@ class PostServiceTest {
 
     @Test
     void testGetPostsByUserIdsInReverseChronologicalOrder_NoPostsFound() {
-        List<String> followerIds = Arrays.asList("user123", "user456");
+        List<String> followerIds = Arrays.asList("user234", "user456");
         Page<Post> postsPage = new PageImpl<>(Arrays.asList());
 
         when(userRepository.findByUsername("user123")).thenReturn(userInfo);
-        when(followerRepository.findFollowingUsersBySubscriberId("user123")).thenReturn(followerIds);
-        when(postRepository.findPostsByUserIdInOrderByCreatedAtDesc(followerIds, pageable)).thenReturn(postsPage);
+        when(followerRepository.findFollowingUsersBySubscriberId("user123")).thenReturn(new ArrayList<>(followerIds));
+        when(postRepository.findPostsByUserIdInOrderByCreatedAtDesc(any(), any())).thenReturn(postsPage);
 
-        Page<Post> result = postService.getPostsByUserIdsInReverseChronologicalOrder("user123", pageable);
+        Page<Post> result = postService.getPostsByUserIdsInReverseChronologicalOrder("user123", 1);
 
         assertEquals(0, result.getTotalElements());
         verify(followerRepository, times(1)).findFollowingUsersBySubscriberId("user123");
-        verify(postRepository, times(1)).findPostsByUserIdInOrderByCreatedAtDesc(followerIds, pageable);
+        verify(postRepository, times(1)).findPostsByUserIdInOrderByCreatedAtDesc(any(), any());
     }
 
     @Test
@@ -206,6 +211,7 @@ class PostServiceTest {
 
         when(userRepository.findByUsername(getUserInfo().getUsername())).thenReturn(userInfo);
         when(postRepository.findById(postId)).thenReturn(Optional.of(post));
+        when(cacheManager.getCache(any())).thenReturn(new CaffeineCache("test", Caffeine.newBuilder().build()));
 
         postService.deletePost(getUserInfo().getUsername(), postId);
 

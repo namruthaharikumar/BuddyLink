@@ -1,5 +1,6 @@
 package com.intuit.be_a_friend.config;
 
+import com.intuit.be_a_friend.filters.JWTAuthenticationEntryPoint;
 import com.intuit.be_a_friend.filters.JwtRequestFilter;
 import com.intuit.be_a_friend.filters.RateLimitingFilter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,9 @@ public class SecurityConfig {
     @Lazy
     JwtRequestFilter jwtRequestFilter;
 
+    @Autowired
+    JWTAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -35,6 +39,8 @@ public class SecurityConfig {
                 .authorizeRequests()
                 .requestMatchers(new AntPathRequestMatcher("/api/v1/user/**")).permitAll()
                 .requestMatchers(new AntPathRequestMatcher("/api/v1/posts/**")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/error")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/api/v1/comments/**"),new AntPathRequestMatcher("/api/v1/comments/**/**")).permitAll()
                 .requestMatchers(new AntPathRequestMatcher("/swagger-ui/**"),new AntPathRequestMatcher("/v3/api-docs/**")).permitAll()
                 .anyRequest().authenticated()
                 .and()
